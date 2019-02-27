@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/etcd-io/zetcd"
+	"github.com/TrustedKeep/zetcd"
 
 	"github.com/samuel/go-zookeeper/zk"
 )
