@@ -19,7 +19,7 @@ import (
 	"net"
 	"sync"
 
-	"github.com/etcd-io/zetcd"
+	"github.com/TrustedKeep/zetcd"
 	"github.com/golang/glog"
 	"golang.org/x/net/context"
 )

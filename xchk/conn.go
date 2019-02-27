@@ -19,7 +19,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/etcd-io/zetcd"
+	"github.com/TrustedKeep/zetcd"
 	"github.com/golang/glog"
 )
 
