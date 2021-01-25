@@ -15,13 +15,19 @@
 package zetcd
 
 import (
+	"sync"
+
 	"github.com/golang/glog"
 )
 
-type zkLog struct{ zk ZK }
+type zkLog struct {
+	zk ZK
+
+	caches sync.Map
+}
 
 func NewZKLog(zk ZK) ZK {
-	return &zkLog{zk}
+	return &zkLog{zk: zk}
 }
 
 func (zl *zkLog) Create(xid Xid, op *CreateRequest) ZKResponse {
@@ -31,7 +37,11 @@ func (zl *zkLog) Create(xid Xid, op *CreateRequest) ZKResponse {
 
 func (zl *zkLog) Delete(xid Xid, op *DeleteRequest) ZKResponse {
 	glog.V(7).Infof("Delete(%v,%+v)", xid, *op)
-	return zl.zk.Delete(xid, op)
+	resp := zl.zk.Delete(xid, op)
+	if resp.Err == nil {
+		zl.caches.Delete(op.Path)
+	}
+	return resp
 }
 
 func (zl *zkLog) Exists(xid Xid, op *ExistsRequest) ZKResponse {
@@ -41,12 +51,33 @@ func (zl *zkLog) Exists(xid Xid, op *ExistsRequest) ZKResponse {
 
 func (zl *zkLog) GetData(xid Xid, op *GetDataRequest) ZKResponse {
 	glog.V(7).Infof("GetData(%v,%+v)", xid, *op)
-	return zl.zk.GetData(xid, op)
+
+	if v, ok := zl.caches.Load(op.Path); ok {
+		glog.V(7).Infof("GetData resp:%+v", v.(ZKResponse))
+		v.(ZKResponse).Hdr.Xid = xid
+		return v.(ZKResponse)
+	}
+
+	resp := zl.zk.GetData(xid, op)
+	if resp.Err == nil {
+		glog.V(7).Infof("GetData resp:%+v", resp)
+		zl.caches.Store(op.Path, resp)
+	}
+	return resp
 }
 
 func (zl *zkLog) SetData(xid Xid, op *SetDataRequest) ZKResponse {
 	glog.V(7).Infof("SetData(%v,%+v)", xid, *op)
-	return zl.zk.SetData(xid, op)
+
+	resp := zl.zk.SetData(xid, op)
+	if resp.Err == nil {
+		if v, ok := zl.caches.Load(op.Path); ok {
+			v.(ZKResponse).Resp.(*GetDataResponse).Data = op.Data
+			zl.caches.Store(op.Path, v)
+			glog.V(7).Infof("SetData resp:%+v", v.(ZKResponse))
+		}
+	}
+	return resp
 }
 
 func (zl *zkLog) GetAcl(xid Xid, op *GetAclRequest) ZKResponse {
