@@ -18,7 +18,7 @@ import (
 	"net"
 	"testing"
 
-	"github.com/etcd-io/zetcd"
+	"github.com/TrustedKeep/zetcd"
 
 	"github.com/coreos/etcd/integration"
 )

@@ -17,7 +17,7 @@ package xchk
 import (
 	"fmt"
 
-	"github.com/etcd-io/zetcd"
+	"github.com/TrustedKeep/zetcd"
 )
 
 var (
